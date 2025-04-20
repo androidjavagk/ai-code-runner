@@ -28,6 +28,9 @@ async function askAI(prompt) {
   });
 
   const json = await response.json();
+  if (!json.choices || !json.choices[0]?.message?.content) {
+    throw new Error("Unexpected AI response format");
+  }
   return json.choices[0].message.content;
 }
 
@@ -55,6 +58,11 @@ app.post("/api/task", async (req, res) => {
 
 app.post("/api/approve", (req, res) => {
   const { plan } = req.body;
+
+  if (!plan || !Array.isArray(plan.code_files) || plan.code_files.length === 0) {
+    return res.status(400).json({ error: "Invalid plan object or missing code files." });
+  }
+
   const code = plan.code_files[0].content;
 
   fs.writeFileSync("task.js", code);
